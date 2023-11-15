@@ -1,0 +1,138 @@
+STAR version=2.7.11a
+STAR compilation time,server,dir=2023-08-15T11:38:34-04:00 :/home/dobin/data/STAR/STARcode/STAR.master/source
+STAR git: On branch master ; commit 826820cee5a48b1bc9cb862d57a843012eef989f ; diff files: 
+##### Command Line:
+STAR-2.7.11a/bin/Linux_x86_64/STAR --genomeDir genomeIndex --runThreadN 1 --readFilesIn workspace/Galaxy3-[FASTQ_to_FASTA_on_data_1].fasta --outFileNamePrefix mapped/result --outSAMtype BAM SortedByCoordinate --outSAMunmapped None --outFilterMismatchNmax 3 --outFilterMultimapNmax 1 --outSAMattributes All
+##### Initial USER parameters from Command Line:
+outFileNamePrefix                 mapped/result
+###### All USER parameters from Command Line:
+genomeDir                     genomeIndex     ~RE-DEFINED
+runThreadN                    1     ~RE-DEFINED
+readFilesIn                   workspace/Galaxy3-[FASTQ_to_FASTA_on_data_1].fasta        ~RE-DEFINED
+outFileNamePrefix             mapped/result     ~RE-DEFINED
+outSAMtype                    BAM   SortedByCoordinate        ~RE-DEFINED
+outSAMunmapped                None        ~RE-DEFINED
+outFilterMismatchNmax         3     ~RE-DEFINED
+outFilterMultimapNmax         1     ~RE-DEFINED
+outSAMattributes              All        ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runThreadN                        1
+genomeDir                         genomeIndex
+readFilesIn                       workspace/Galaxy3-[FASTQ_to_FASTA_on_data_1].fasta   
+outFileNamePrefix                 mapped/result
+outSAMtype                        BAM   SortedByCoordinate   
+outSAMattributes                  All   
+outSAMunmapped                    None   
+outFilterMultimapNmax             1
+outFilterMismatchNmax             3
+
+-------------------------------
+##### Final effective command line:
+STAR-2.7.11a/bin/Linux_x86_64/STAR   --runThreadN 1   --genomeDir genomeIndex   --readFilesIn workspace/Galaxy3-[FASTQ_to_FASTA_on_data_1].fasta      --outFileNamePrefix mapped/result   --outSAMtype BAM   SortedByCoordinate      --outSAMattributes All      --outSAMunmapped None      --outFilterMultimapNmax 1   --outFilterMismatchNmax 3
+----------------------------------------
+
+Number of fastq files for each mate = 1
+ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
+WARNING: --limitBAMsortRAM=0, will use genome size as RAM limit for BAM sorting
+Finished loading and checking parameters
+Reading genome generation parameters:
+### STAR-2.7.11a/bin/Linux_x86_64/STAR   --runMode genomeGenerate      --runThreadN 1   --genomeDir genomeIndex   --genomeFastaFiles reference/Pseudomonas_aeruginosa_PAO1_107.fna   
+### GstrandBit=32
+versionGenome                 2.7.4a     ~RE-DEFINED
+genomeType                    Full     ~RE-DEFINED
+genomeFastaFiles              reference/Pseudomonas_aeruginosa_PAO1_107.fna        ~RE-DEFINED
+genomeSAindexNbases           14     ~RE-DEFINED
+genomeChrBinNbits             18     ~RE-DEFINED
+genomeSAsparseD               1     ~RE-DEFINED
+genomeTransformType           None     ~RE-DEFINED
+genomeTransformVCF            -     ~RE-DEFINED
+sjdbOverhang                  0     ~RE-DEFINED
+sjdbFileChrStartEnd           -        ~RE-DEFINED
+sjdbGTFfile                   -     ~RE-DEFINED
+sjdbGTFchrPrefix              -     ~RE-DEFINED
+sjdbGTFfeatureExon            exon     ~RE-DEFINED
+sjdbGTFtagExonParentTranscripttranscript_id     ~RE-DEFINED
+sjdbGTFtagExonParentGene      gene_id     ~RE-DEFINED
+sjdbInsertSave                Basic     ~RE-DEFINED
+genomeFileSizes               6291456   51681336        ~RE-DEFINED
+Genome version is compatible with current STAR
+Number of real (reference) chromosomes= 1
+1	refseq|NC_002516.2|chromosome	6264404	0
+Started loading the genome: Sun Nov 12 17:52:42 2023
+
+Genome: size given as a parameter = 6291456
+SA: size given as a parameter = 51681336
+SAindex: size given as a parameter = 1
+Read from SAindex: pGe.gSAindexNbases=14  nSAi=357913940
+nGenome=6291456;  nSAbyte=51681336
+GstrandBit=32   SA number of indices=12528808
+Shared memory is not used for genomes. Allocated a private copy of the genome.
+Genome file size: 6291456 bytes; state: good=1 eof=0 fail=0 bad=0
+Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 6291456 bytes
+SA file size: 51681336 bytes; state: good=1 eof=0 fail=0 bad=0
+Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 51681336 bytes
+Loading SAindex ... done: 1565873619 bytes
+Finished loading the genome: Sun Nov 12 17:52:42 2023
+
+alignIntronMax=alignMatesGapMax=0, the max intron size will be approximately determined by (2^winBinNbits)*winAnchorDistNbins=589824
+BAM sorting: 72065 mapped reads
+BAM sorting bins genomic start loci:
+1	0	586895
+2	0	681695
+3	0	687974
+4	0	702455
+5	0	797741
+6	0	797744
+7	0	797744
+8	0	797744
+9	0	797744
+10	0	797744
+11	0	797744
+12	0	797744
+13	0	797744
+14	0	797744
+15	0	797744
+16	0	797744
+17	0	797744
+18	0	797744
+19	0	797744
+20	0	797744
+21	0	797744
+22	0	797744
+23	0	901822
+24	0	1007767
+25	0	1692045
+26	0	1959082
+27	0	3133476
+28	0	3325126
+29	0	4048528
+30	0	4388829
+31	0	4785707
+32	0	4785707
+33	0	4785712
+34	0	4785712
+35	0	4785712
+36	0	4785712
+37	0	4785712
+38	0	4785712
+39	0	4785712
+40	0	4785712
+41	0	4785712
+42	0	4785712
+43	0	4785712
+44	0	4785712
+45	0	4785712
+46	0	4869434
+47	0	5141861
+48	0	5372508
+Completed: thread #0
+Nov 12 17:53:14 ..... finished mapping
+RAM after mapping:
+VmPeak:	 2985656 kB; VmSize:	 2937808 kB; VmHWM:	 1751308 kB; VmRSS:	 1734620 kB; 
+RAM after freeing genome index memory:
+VmPeak:	 2985656 kB; VmSize:	 1352012 kB; VmHWM:	 1751308 kB; VmRSS:	  148828 kB; 
+Nov 12 17:53:14 ..... started sorting BAM
+Max memory needed for sorting = 5946737
+ALL DONE!

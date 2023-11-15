@@ -1,0 +1,7 @@
+"0","require(Biostrings, quietly = T)"
+"0","fq2 <- readDNAStringSet('data/S08_Ves02_read2.fastq',format='FASTQ')"
+"0","length(fq2)"
+"1","[1]"
+"1"," 250000"
+"1","
+"

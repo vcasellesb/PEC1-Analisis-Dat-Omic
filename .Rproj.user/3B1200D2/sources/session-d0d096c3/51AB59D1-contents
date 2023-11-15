@@ -1,0 +1,272 @@
+---
+title: "PEC 1 - Anàlisi de Dades Òmiques"
+author: "Vicent Caselles Ballester"
+date: "`r Sys.Date()`"
+output: bookdown::pdf_document2
+header-includes:
+  \usepackage{float}
+  \floatplacement{figure}{H}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introducció i objectius
+
+L'objectiu d'aquesta PEC és consolidar els coneixements estudiats fins ara, referents a l'anàlisi de dades òmiques mitjançant eines informàtiques, concretament **Galaxy** (plataforma online) i el llenguatge de programació/*software* **R**, amb l'ús de Bioconductor.
+
+En aquesta PEC, treballarem amb fitxers en format FASTQ. Aquest format neix a partir del format FASTA, que és un tipus especialitzat de fitxer de text per a la representació de seqüències de nucleòtids o aminoàcids.
+
+Els fitxers FASTA solen començar amb un símbol `>` seguit d'una descripció, que sol correspondre a algún identificador per a la seqüència que hi ha a continuació (com per exemple el nom d'un gen, trànscrit...). Després d'aquesta línea trobem la seqüència.
+
+```{r, echo=FALSE, message=F, warning=F, fig.align="default", fig.cap="Exemple de format de fitxer FASTA. Font: https://compgenomr.github.io/book/fasta-and-fastq-formats.html"}
+# Define variable containing url
+url <- "https://compgenomr.github.io/book/images/fastaPic.png"
+library(png)
+library(RCurl)
+url_cont <- getURLContent(url)
+img <- readPNG(url_cont)
+rimg <- as.raster(img) # raster multilayer object
+r <- nrow(rimg) / ncol(rimg) # image ratio
+plot(rimg)
+```
+
+El format FASTQ neix a partir del format FASTA, i està dissenyat per a contenir, a més de la seqüència en si, mètriques de qualitat derivades de experiments de seqüenciació *Next Generation*.
+
+```{r figure2, echo=FALSE, message=F, warning=F, fig.align="default", fig.cap="Exemple de format de fitxer FASTQ. Font: https://compgenomr.github.io/book/fasta-and-fastq-formats.html"}
+# Font per a crear la imatge: 
+# https://community.rstudio.com/t/not-able-to-get-an-image-into-word-pdf-from-url-in-rmarkdown/15855/10
+
+# Define variable containing url
+url <- "https://compgenomr.github.io/book/images/fastqPic.png"
+library(png)
+library(RCurl)
+url_cont <- getURLContent(url)
+img <- readPNG(url_cont)
+rimg <- as.raster(img) # raster multilayer object
+r <- nrow(rimg) / ncol(rimg) # image ratio
+plot(rimg)
+```
+
+És a dir, a més de la seqüència pròpiament dita, tenim informació sobre l'experiment, o els *reads*, que l'han generat. Aquest format utilitza quatre línies per seqüència. La primera, que comença per un símbol `@` (anàlogament al `>` de FASTA), conté la descripció de la seqüència. Dintre de la informació que pot contenir aquesta descripció, trobem informació referent a la tecnologia que s'ha fet servir, com els números ID de les *flow cells* o les *lanes*.
+
+La segona línea conté la seqüència de DNA/RNA/aminoàcids. La tercera línea conté un signe positiu (`+`) que marca el final de la seqüència, i la quarta línea conté els quality scores en format ASCII. Aquests són molt importants, ja que ens donen informació sobre la qualitat de l'experiment de seqüenciació, i permeten tenir una mesura de la certesa amb la qual s'ha assignat un nucleòtid a una posició del *read* determinada. Òbviament, els quality scores han de tenir la mateixa longitud que la seqüència. Generalment, s'utilitzen els anomenats *Phred quality scores*, definits per $Q_{phred} = -10 \log_{10} e$, on $e$ és la probabilitat de que la base hagi sigut assignada a un nucleòtid erròniament (per tant, si tens Q -- que el trobes amb el caràcter ASCII del *Quality Score* -- pots trobar $p_{error} = 10^{-Q/10}$).
+
+A continuació, deixo una llista amb la interpretació dels *quality scores* que he trobat a Internet. Cada *threshold* correspon a una probabilitat d'error diferent, amb puntuacions més grans corresponent a probabilitats d'error menors.
+
+* 10 correspon a 10% error (1/10)
+* 20 correspon a 1% error (1/100)
+* 30 correspon a 0.1% error (1/1000)
+* 40 correspon a 0.01% error (1/10000)
+
+Com veurem a continuació (Figura \@ref(fig:quality)), el nostre fitxer no presenta *quality scores* de mitjana inferior a 20, corresponent a una probabilitat d'error inferior a $0.01$.
+
+# Materials i mètodes
+
+## Presentació de l'informe
+Tots els gràfics han sigut confeccionats amb R+Bioconductor (software lliure + paquet especialitzat en anàlisis bioinformàtics) i Galaxy (plataforma online que permet realitzar complexos anàlisis bioinformàtics sense coneixement de programació, i sense haver-te de preocupar d'instal·lar *software*, ni per les versions d'aquest -- només necessites un navegador web i accés a Internet), tal i com s'indica a l'enunciat de la PEC. Aquest informe ha estat generat amb Markdown i \LaTeX.
+
+## Dataset
+En quant a les dades, tal i com s'ha dit al fòrum del campus, corresponen a un experiment de RNA-Seq amb mostres de transcriptoma complert o RNA vesicular de *Pseudomonas aeruginosa*. L'experiment ha sigut realitzat en format *paired-end*.
+
+Al primer apartat de resultats he fet una mica d'especulació informal sobre el dataset, prèviament a tenir aquesta informació. He intentat seguir un procediment mental lògic, però en certes ocasions he fallat.
+
+## Disponibilitat del codi
+
+El codi utilitzat per a generar aquest informe es troba a https://github.com/vcasellesb/PEC1-Analisis-Dat-Omic.
+
+## Comentari general
+La veritat és que el meu coneixement tècnic és bastant limitat. Tinc una idea general de tot, però no tinc coneixements especialment increíbles ni de genòmica, matemàtiques/estadística ni programació. El que si que sé fer és utilitzar Internet per a buscar informació. Per això, és possible que una gran part de lo que hi hagi en aquest informe sigui extret d'Internet. Intentaré citar tot el possible.
+
+# Resultats
+
+## Pregunta 2
+
+### Comptatge de seqüències
+
+La primera part de la pregunta 2, on demana la descripció del format FASTQ, ha sigut resposta a l'apartat d'introducció. A continuació mostro dues maneres d'averiguar el número de seqüències que es demana a l'enunciat, mitjançant R i també mitjançant el terminal d'Unix.
+
+```{r, message=FALSE}
+# font per a aquest codi: https://www.biostars.org/p/9487218/
+require(Biostrings, quietly = T)
+fq <- readDNAStringSet('data/S07_Ves02_read1.fastq',format='FASTQ')
+length(fq)
+```
+
+```{r, echo=FALSE, out.width="75%", fig.cap="Demostració obtenció de número reads amb Unix terminal -- el resultat s'ha de dividir entre 4, ja que cada seqüència requereix 4 línies", fig.align='center'}
+knitr::include_graphics("images/countreads_terminal.png")
+```
+
+Com veiem, els resultats coincideixen.
+
+### Informació sobre el tipus de seqüenciació que es va dur a terme
+
+Mirant per Internet, he trobat que, pel format de la primera línea de cada seqüència, segurament aquest fitxer provingui d'un instrument de la marca *Illumina*. A continuació mostro el tipus de format al que crec que pertany el nostre fitxer.
+
+```{r, echo=FALSE, out.width="75%", fig.cap='Format de descripció de seqüències pertanyent a màquines de la casa comercial Illumina (NGS). Font: Wikipedia', fig.align='center'}
+knitr::include_graphics("images/Illumina.png")
+```
+
+He intentat esbrinar a quina espècie pertany el fitxer, però no he sigut capaç. He intentat fer un BLAT amb diferents seqüències o *reads*, perquè pensava que els *reads* dels fitxers FASTQ eren contiguus, però he trobat que no és així.
+
+He intentat fer BLATs amb diferents *reads* triats arbitràriament (i intentant que tinguessin un bon *Quality Score*), però cap m'ha donat resultats en els quals tingui confiança. Una sospita que tinc es *Saccharomyces cerevisiae*, però tinc poques proves que aportar.
+
+**Actualització**: Després de buscar per internet, convertir el fitxer FASTQ a FASTA amb *Galaxy* i fer diversos BLATs amb les seqüències que n'han resultat, resulta que ens han dit l'espècie al fòrum del Campus Virtual. És *Pseudomonas aeruginosa*, un bacil gram-negatiu.
+
+En quant al tipus d'experiment que ha generat les dades del meu fitxer, entenc que, com que diu `read1`, que es deu tractar d'una seqüenciació *paired-end*.
+
+D'acord amb el que he trobat (referència 2), això ho podem comprovar de la següent manera. Si les meves dades provenen d'un experiment de seqüenciació *paired-end*, llavors el fitxer corresponent als reads 2 hauria de tenir el mateix nombre de seqüències. Anem a comprovar-ho:
+
+```{r}
+require(Biostrings, quietly = T)
+fq2 <- readDNAStringSet('data/S08_Ves02_read2.fastq',format='FASTQ')
+length(fq2)
+```
+
+Com veiem, això es compleix. Ho he mirat amb el fitxer `S06_Ves01_read1.fastq` i també es compleix, així que no tinc clar fins a quin punt això té cap rellevància, però bé, el raonament té sentit.
+
+A continuació mostro les ids de les dues primeres reads dels fitxers `S07_Ves02_read1.fastq` i `S08_Ves02_read2.fastq` que, si no m'equivoco, haurien de provenir del mateix experiment.
+
+```{r}
+names(fq2[1]) 
+names(fq[1])
+```
+
+Com veiem, els dos reads tenen el mateix id excepte que el id provenent del fitxer que acaba en `read2` presenta un 2 al caràcter que indica quin membre del *pair* és, fet que és molt coherent. A més, també podem observar que les coordenades del clúster es corresponen, reforçant la meva teoria de que aquests dos fitxers corresponen als dos reads d'un experiment paired-end.
+
+Com podem veure, a més a més, els ids dels reads dels dos fitxers presenten el mateix índex (`AGTCAA`), fet que sembla indicar (amb el coneixement que tinc ara mateix) que es tracta d'un experiment de *Single Indexed Sequencing* (https://support.illumina.com/content/dam/illumina-support/documents/documentation/system_documentation/miseq/indexed-sequencing-overview-guide-15057455-08.pdf).
+
+## Pregunta 3
+
+### Qualitat de la seqüenciació
+
+A continuació, mostro els resultats principals de córrer l'eina FASTQC a *Galaxy*. Primer de tot, mostro les estadístiques bàsiques i els resultats dels *tests* que corre FASTQC.
+
+```{r basic-stats, echo=FALSE, fig.show="hold", out.weight="49%", out.height="20%", fig.cap="Summary i estadístiques bàsiques obtingudes en el report de FASTQC", fig.align='center'}
+knitr::include_graphics(c('images/summary.png', "images/basic-stats.png"))
+```
+
+Com podem observar, hi ha diversos *tests* que no supera l'experiment. Mostro els gràfics més importants, i em centro especialment en aquells que han fallat segons el *summary*. També, com podem veure, el número de seqüències total coincideix amb el calculat *programàticament*.
+
+A la següent figura podem veure que les bases que, de mitjana, presenten una pitjor qualitat són les primeres de cada read, pero cap d'aquestes mostra una mitjana inferior a 30.
+
+```{r quality, echo=FALSE, out.width="49%", fig.show='hold', out.height="30%", fig.cap="Quality scores per a cada posició del read", fig.align='center'}
+knitr::include_graphics(c("images/FASTQC1.png", "images/FASTQC2.png"))
+```
+A continuació mostro dos gràfics referents al contingut de les bases, tant en percentatge total de les 4 bases com en percentatge de GC.
+
+```{r gc, echo=F, out.width="49%", out.height="30%", fig.show="hold", fig.align="center", fig.cap="Contingut de les bases (% de nucleòtids) segons la seva posició"}
+knitr::include_graphics(c('images/GC-content.png', 'images/nuclseq.png'))
+```
+A continuació mostro un gràfic que mostra la quantitat de duplicació que hi ha hagut a l'experiment i el contingut d'adaptador que s'ha observat segons la posició dins del read.
+
+```{r dup-adap, out.width="49%", fig.show="hold", echo=FALSE, fig.cap="Nivells de dupliació de seqüències i percentatge de contingut d'adaptadors segons la posició", fig.align='center'}
+knitr::include_graphics(c('images/duplication.png', 'images/adapter-content.png'))
+```
+
+Finalment, mostro les seqüències més sobre-representades de l'experiment.
+
+```{r enrichment, out.width="70%", fig.cap="Seqüències més sobre-representades, número de vegades que apareixen i percentatge que suposa del total de seqüències.", echo=FALSE, fig.align='center'}
+knitr::include_graphics('images/overrepresented.png')
+```
+
+
+## Pregunta 4
+A continuació, vaig a dur a terme el *Quality Control* utilitzant el paquet `Rqc` de `Bioconductor`. Primer creo l'objecte que necessito, i després vaig creant els *plots* un a un. No mostro el codi.
+
+```{r message=FALSE}
+require(Rqc, quietly=T)
+qa <- rqcQA('data/S07_Ves02_read1.fastq', workers=1)
+```
+
+```{r table-basic-stats, message=FALSE}
+require(dplyr)
+require(kableExtra)
+knitr::kable(perFileInformation(qa), caption = "Estadístiques bàsiques de l'experiment") %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+```{r mean-quality, fig.align='center', fig.cap="Gràfics referents a la qualitat dels base calls", echo=FALSE, fig.show="hold", out.width="32%"}
+rqcReadQualityBoxPlot(qa)
+rqcReadQualityPlot(qa)
+rqcCycleAverageQualityPlot(qa)
+```
+
+
+```{r num-occur, out.width="49%", out.height="30%", fig.show="hold", fig.align='center', fig.cap="Sobrerepresentació dels reads i similaritat entre les seqüències més sobrerepresentades", echo=FALSE}
+rqcReadFrequencyPlot(qa)
+rqcFileHeatmap(qa[[1]], dist.method = "euclidean")
+```
+<!---
+# Elimino el gràfic referent a l'amplitud de les seqüències, ja que aporta poquet
+# ```{r read-width, out.width="60%", fig.cap="Amplitud/longitud de les reads", fig.align='center', echo=FALSE}
+# rqcReadWidthPlot(qa)
+# ```
+-->
+
+```{r GC-perc, out.width="60%", fig.cap="Percentatge de GC per posició", fig.align='center', echo=FALSE}
+rqcCycleGCPlot(qa)
+```
+
+```{r cycle-quality-plot, fig.show="hold", out.width="50%", fig.cap="Quality plots per cycle", echo=FALSE}
+rqcCycleQualityPlot(qa)
+rqcCycleQualityBoxPlot(qa)
+```
+
+```{r base-calls-2, fig.show="hold", out.width="50%", fig.cap="Bases assignades a cada posició dels reads", echo=FALSE}
+rqcCycleBaseCallsLinePlot(qa)
+rqcCycleBaseCallsPlot(qa)
+```
+
+# Discussió
+
+Com podem veure, els resultats són molt semblants entre *Galaxy* i *R/Bioconductor*. En general, els *quality scores* són molt bons per a totes les bases o *cycles*. Un fet que m'he trobat a bastants tutorials/*lessons* a la web és que, generalment, la qualitat de les bases té una tendència a reduïr-se cap al final del *read*, degut a problemes com el *signal decay*, on la senyal fluorescent va decaient amb el número de cicles del *read*; o com el *phasing* (referència 4). Això, en el nostre cas no es dóna. 
+
+Per altra banda, una observació que em sembla preocupant és que sembla que hi ha un percentatge bastant alt de seqüències sobrerepresentades, amb més de 10000 ocurrències en l'experiment/fitxer FASTQ, suposant això més d'un 10% de les seqüències. Veiem que aquest fet es pot observar tant als gràfics de *Galaxy* (fig. \@ref(fig:enrichment)), com als gràfics de `Rqc` (fig. \@ref(fig:num-occur)).
+
+Això he estat buscant i es diu *enrichment bias*, i pot ser que realment aquests gens estiguin sobre-expressats biològica/natural -ment, o pot ser que hagin sigut generats artificialment, degut a l'amplificació selectiva de certes seqüències per sobre de les altres durant el pas de PCR.
+
+A la figura \@ref(fig:enrichment) mostro les seqüències més sobrerepresentades segons l'eina FASTQC de *Galaxy*. Aquí, podem veure que els *reads* que apareixen més vegades (o han sigut seqüenciats més vegades) no corresponen a cap *adapter sequence* reconegut per FASTQC. D'aquesta manera, o bé son trànscrits que realment estan molt expressats a la mostra, o bé son productes d'amplificació selectiva.
+
+Per a investigar això, podríem fer un BLAST amb aquestes seqüències, per a veure si corresponen a algún gen interessant. Un exemple de lloc on podríem fer aquesta cerca és la següent pàgina: `https://www.pseudomonas.com/blast/setnblast`. Ho he fet, pero no he trobat resultats que, amb el meu coneixement actual, siguin mereixedors de mostrar-los en aquest informe, però crec que el procediment lògic seria aquest.
+
+També, com podem veure a la figura \@ref(fig:base-calls-2) (esquerra) o a la figura \@ref(fig:gc) (que es correlacionen molt bé), sembla que hi ha una mica de *bias* per al nucleòtid G al principi i al final de cada *read*, encara que sembla que no és molt pronunciat. Cal destacar que he llegit en bastants fonts que, freqüentment, en els experiments de seqüenciació de RNA, s'observen diferències en la distribució del contingut nucleotídic al principi dels *reads*, degut a un fenomen que ocorre durant la fase de preparació de llibreria anomenat *priming with random heaxamers* (referència 2). 
+
+Tot i això, en general, veiem un gràfic molt caòtic, fet que repercuteix en el fet de que l'experiment no passi el *test* corresponent. Hi ha molta variabilitat (el gràfic oscil·la molt a mesura que avances pel *read*), amb canvis grossos de contingut (aprox 30%). Això contrasta amb el que he observat generalment a la bibliografia (referències 2 i 5), on aquest gràfic s'estabilitzava a partir del cicle 15, aproximadament. Això no sé a què pot ser degut.
+
+En quant al percentatge de GC, aquest és de 55% (fig. \@ref(fig:basic-stats)) de mitjana. Buscant a internet, he trobat que el percentatge de GC del genoma de *P. aeruginosa* oscil·la entre un 65 i un 67% (https://doi.org/10.3389%2Ffmicb.2011.00150). Això entenc que és algo a tenir en compte. Com podem veure a la distribució de GC (fig. \@ref(fig:gc)), la distribució del nostre experiment dista considerablement de la distribució teòrica. Veiem un pic important a prop del 65%, fet curiós donat al fet que comento al principi del parágraf. Podria ser degut al contingut específic del genoma de *P. aeruginosa*? Segons la bibliografia, aquests canvis en la distribució de GC solen ser deguts a contaminació o *bias* en la seqüenciació (podria --i segurament ho està-- estar lligat a les seqüències sobre-representades). Segons la referència 7, la presència de "pics alternatius" pot voler dir diferents coses: pics pronunciats i estrets podrien ser deguts a la presència d'un contaminant específic (com adaptadors), mentre que pics més extensos indiquen contaminació d'una altra espècie.
+
+Nosaltres tenim un major pic al voltant de 55%, i un pic menor al voltant de 65%. Podria voler dir això que hi ha contaminació? És realment el pic a 65% el que correspondria tenint en compte la espècie amb la que estem tractant? Trobo que, si és així, hi hauria hagut molta contaminació.
+
+En quant al contingut d'adaptador (fig. \@ref(fig:dup-adap)), que mesura la presència d'aquests artefactes als nostres *reads*, segons he llegit (referència 6), és un fenòmen bastant comú. En el nostre cas, veiem que aquest supera el 30% per al *Illumina Universal Adapter* en les últimes posicions dels *reads.* Això podria tenir-se en compte en els següents passos (fer un *trimming* de les *reads*)
+
+Un comentari respecte al paquet `Rqc`, i és algo personal i que em sembla una arma de doble *filo* més que una crítica, és que abstrau moltíssim tot el procediment de generació dels gràfics de manera que, en el meu cas, preferiria que m'ensenyessin com generen els gràfics exactament, per així tenir opció de fer algunes modificacions. Per exemple, tots els gràfics apareixen amb una llegenda corresponent al nom dels fitxers que han entrat com a input a la funció `rqcQA`. En el nostre cas, només tenim un fitxer, i m'agradaria desfer-me de la llegenda que frustrantment apareix contínuament, precisament per a poder tenir més espai per els gràfics i així poder ajuntar-los en figures. Potser si que hi és la opció i no la he sabut trobar, però m'agrada tenir més control.
+
+# Conclusions
+
+Com a conclusions, podem afirmar que les probabilitats d'error en el *base calling* són força baixes en general. Tot i això, s'hauria d'investigar a profunditat en els següents pasos de l'anàlisi els motius pels que tenim seqüències tan sobre-representades, perquè hi ha tanta variabilitat en el % de nucleòtids d'acord amb la posició de la base, i el perquè de la desviació de la distribució del contingut de GC.
+
+# Referències
+
+* https://compgenomr.github.io/book/
+* https://bioinformatics.ccr.cancer.gov/docs/b4b/Module2_RNA_Sequencing/Lesson10/
+* https://doi.org/10.3389%2Ffmicb.2011.00150
+* https://scienceparkstudygroup.github.io/rna-seq-lesson/03-qc-of-sequencing-results/index.html
+* https://hbctraining.github.io/Intro-to-rnaseq-hpc-salmon/lessons/qc_fastqc_assessment.html
+* https://gtpb.github.io/ELB18S/pages/L09
+* https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/5%20Per%20Sequence%20GC%20Content.html
+
+# Apéndix
+
+Per curiositat i com que al campus s'ha especificat que el genoma al que pertanyen els fitxers FASTQ és el del bacteri *Pseudomonas aeruginosa* (concretament la soca PAO1, disponible a: https://www.pseudomonas.com/strain/download), he volgut provar de fer el alineament amb aquest genoma. Per a fer-ho, he seguit el tutorial de la web següent: https://scienceparkstudygroup.github.io/rna-seq-lesson/03-qc-of-sequencing-results/index.html.
+
+Bàsicament, el tutorial consisteix en alinear una sèrie de fitxers FASTQ directament a un genoma prèviament indexat amb l'eina `STAR` (https://github.com/alexdobin/STAR). Aquest tutorial utilitza `Docker`, que és una eina molt útil per a correr eines específiques en entorns aïllats (*containers*) de manera que és molt fàcil instal·lar paquets específics en qualsevol màquina sense preocupar-se de compatibilitat o espatllar la teva pròpia màquina.
+
+A continuació mostro els resultats de dur a terme el meu *alignment*, que també l'he fet amb l'eina `STAR`. Qualsevol dubte sobre com he fet això, si-us-plau contacteu-me.
+
+```{r extra, out.width="75%", echo=FALSE, fig.cap="Resultat de l'alineament del fitxer FastQ amb el suposat genoma de l'espècie corresponent", fig.align='center'}
+knitr::include_graphics('images/docker-alignment.png')
+```
+
+Els resultats, sincerament, no els sé interpretar. Espero haver-ho après al acabar la assignatura.
